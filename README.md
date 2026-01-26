@@ -256,3 +256,96 @@ These cover **Operations, Supply Chain, Precision Medicine, and Patient Experien
 *   **Option 2 (ER Throughput)** is amazing for **Tableau/PowerBI** dashboards.
 *   **Option 4 (Wearables)** is perfect for **Python/Machine Learning**.
 *   **Option 9 (Opioid Tracking)** is great for **SQL & Forensic Data Analysis**.
+
+Here are **5 Unique, Advanced Dataset Ideas** specifically designed to flex **SQL Window Functions**, **Complex Joins**, and **Power BI Storytelling**.
+
+These move away from standard "Patient/Doctor" data into the high-pressure niches of healthcare operations.
+
+---
+
+### 1. The "Operating Room (OR) Tetris" Dataset
+**The Domain:** Surgical Services (The most profitable department in a hospital).
+**The Story:** The OR is a factory. Every minute an OR sits empty during the day costs the hospital $100. Your job is to analyze **"Block Utilization"** and **"Turnover Time."**
+
+*   **The Schema:**
+    *   `Fact_Surgeries`: CaseID, SurgeonID, RoomID, ScheduledStart, ScheduledEnd, **WheelsIn** (Patient enters), **CutTime** (Scalpel hits skin), **CloseTime** (Stitching), **WheelsOut** (Patient leaves).
+    *   `Dim_OR_Rooms`: RoomID, Equipment (Robot, C-Arm), BlockOwner (e.g., "Orthopedics Team gets Mondays").
+*   **The SQL Challenge:**
+    *   Calculate **First Case On-Time Starts (FCOTS)**: Did the 7:30 AM surgery actually start at 7:30?
+    *   Calculate **Turnover Time**: The gap between *Case A WheelsOut* and *Case B WheelsIn*.
+    *   **Gap Analysis:** Find gaps > 60 minutes where no surgery happened (Wasted Block Time).
+*   **The Power BI Challenge:**
+    *   **Gantt Chart Visual:** Show the actual surgery bars vs. the scheduled bars.
+    *   **Heatmap:** Room Utilization by Day of Week and Hour of Day.
+    *   **Drill-Through:** Click a "Red" utilization room to see which Surgeon is constantly late.
+
+### 2. The "Cold Chain" Vaccine Logistics Dataset
+**The Domain:** Pharma Supply Chain / IoT.
+**The Story:** You are shipping temperature-sensitive biologics (like Covid vaccines or Insulin) from the Factory to the Pharmacy. If the temp goes above 8°C for more than 60 minutes, the batch is ruined.
+
+*   **The Schema:**
+    *   `Fact_Shipments`: ShipmentID, RouteID, DepartureTime, ArrivalTime, DrugID.
+    *   `Fact_Sensor_Logs`: ShipmentID, Timestamp (every 15 mins), Temperature, Humidity, Shock (G-Force), GPS_Lat, GPS_Long.
+    *   `Dim_Excursion_Rules`: DrugID, MinTemp, MaxTemp, MaxAllowedExcursionTime.
+*   **The SQL Challenge:**
+    *   **Islands & Gaps (Gaps and Islands problem):** Identify continuous periods where temp was > MaxTemp.
+    *   Calculate **Total Cumulative Excursion Time** per shipment.
+    *   Determine which shipments must be destroyed (Status = 'Spoiled').
+*   **The Power BI Challenge:**
+    *   **Map Visual:** Plot the GPS path, coloring the line Green (Good) or Red (Spoiled) based on temp at that location.
+    *   **Decomposition Tree:** Root cause analysis of spoilage (Is it a specific Route? A specific Trucking Company? A specific Time of Year?).
+
+### 3. The "Bed Management (ADT)" Dataset
+**The Domain:** Hospital Capacity Planning.
+**The Story:** A hospital is like a hotel that you can't book in advance. You have ADT data (**A**dmission, **D**ischarge, **T**ransfer). You need to visualize the "Flow" and predict "Bed Crunch."
+
+*   **The Schema:**
+    *   `Fact_Patient_Movement`: EventID, VisitID, PatientID, FromUnit, ToUnit, EventTime, EventType (Admit, Transfer, Discharge).
+    *   `Dim_Units`: UnitID, MaxCapacity, Floor, CareLevel (ICU, MedSurg, Rehab).
+*   **The SQL Challenge:**
+    *   **The "Census" Query:** It is complex to write a SQL query that says "How many people were in the ICU at exactly 11:00 PM last Tuesday?" (Requires recursive CTEs or complex interval logic).
+    *   Calculate **LOS (Length of Stay)** per unit. (e.g., Patient was in ICU for 2 days, then MedSurg for 4 days).
+*   **The Power BI Challenge:**
+    *   **Sankey Diagram:** Visualize the flow of patients. (ER -> ICU -> Floor -> Home).
+    *   **Pulse Chart:** Real-time visualization of bed occupancy vs. capacity.
+
+### 4. The "Antibiotic Stewardship" (Antibiogram) Dataset
+**The Domain:** Clinical Quality / Infection Control.
+**The Story:** Doctors are prescribing antibiotics, but bacteria are becoming resistant ("Superbugs"). You need to track which bugs are resistant to which drugs at your hospital.
+
+*   **The Schema:**
+    *   `Fact_Microbiology_Results`: SpecimenID, PatientID, CollectionDate, BacteriaIdentified (e.g., E. Coli), Source (Blood, Urine).
+    *   `Fact_Susceptibility`: SpecimenID, AntibioticName, Result (Sensitive, Resistant, Intermediate), MIC_Value (Minimum Inhibitory Concentration).
+    *   `Fact_Prescriptions`: (Standard Rx table).
+*   **The SQL Challenge:**
+    *   **Mismatch Logic:** Find instances where the doctor prescribed "Ciprofloxacin" but the lab result later showed the bacteria was "Resistant" to Ciprofloxacin (Inappropriate Therapy).
+    *   Calculate **Resistance Rates %** per bacteria per year.
+*   **The Power BI Challenge:**
+    *   **Matrix Heatmap (Antibiogram):** Rows = Bacteria, Cols = Antibiotics. Cells = % Sensitive. (Green = Good drug to use, Red = Don't use).
+    *   **Trend Line:** Show the rise of MRSA (Methicillin-Resistant Staph Aureus) over 5 years.
+
+### 5. The "EMS/Ambulance Response" Geospatial Dataset
+**The Domain:** Pre-hospital Emergency Services.
+**The Story:** Seconds save lives. You are analyzing the efficiency of the 911 ambulance fleet.
+
+*   **The Schema:**
+    *   `Fact_Incidents`: IncidentID, CallTime, DispatchTime, EnRouteTime, OnSceneTime, TransportStartTime, HospitalArrivalTime.
+    *   `Dim_Stations`: StationID, Geo_Lat, Geo_Long, FleetSize.
+    *   `Fact_GPS_Pings`: UnitID, Timestamp, Lat, Long, Speed, SirenStatus.
+*   **The SQL Challenge:**
+    *   Calculate **Chute Time** (Dispatch Time - Call Time) vs. **Travel Time** (On Scene - En Route).
+    *   **Geospatial Distance:** Calculate the "Crow Flies" distance vs. Actual distance driven to check for inefficient routing.
+    *   **Unit Utilization:** What % of the shift was the ambulance idle vs. on a call?
+*   **The Power BI Challenge:**
+    *   **Map with Heatmap Layer:** Hotspots for 911 calls (Where do accidents happen?).
+    *   **Scatter Plot:** Distance (X-axis) vs. Response Time (Y-axis). Outliers indicate traffic issues or driver error.
+
+---
+
+### Which one should we choose?
+
+*   **Option 1 (OR Tetris)** is the best for **Business ROI**. Every hospital CFO cares about this dashboard.
+*   **Option 2 (Cold Chain)** is the best for **Modern Tech** (IoT/Sensors) and Pharma.
+*   **Option 3 (Bed Mgmt)** is the hardest **SQL Challenge** (Time-series census is tricky).
+
+Let me know which one you want, and I will generate the schema and the Python script!
