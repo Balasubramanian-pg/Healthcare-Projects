@@ -349,3 +349,83 @@ These move away from standard "Patient/Doctor" data into the high-pressure niche
 *   **Option 3 (Bed Mgmt)** is the hardest **SQL Challenge** (Time-series census is tricky).
 
 Let me know which one you want, and I will generate the schema and the Python script!
+
+Here are **10 more unique, high-level dataset ideas** that target specific niches in healthcare analytics. These are designed to be excellent portfolio pieces because they solve specific, expensive business problems.
+
+### 1. Radiology Workflow & Turnaround Time (The "TAT" Dataset)
+**The Domain:** Imaging / Diagnostics.
+**The Story:** An ER doctor orders a CT scan for a stroke patient. Every minute of delay kills brain cells. You need to find the bottleneck: Is it the technician taking the image, or the radiologist reading it?
+*   **The Schema:** `Fact_Exam_Timestamps` (OrderTime, ExamBegin, ExamEnd, ImageAvailable, RadiologistPickup, FinalReportSigned).
+*   **SQL Challenge:** Calculating "interval deltas" (Time between Order and Begin, Time between ImageAvailable and Report). Handling business hours vs. nights/weekends logic.
+*   **Power BI Challenge:** Box-and-Whisker plots to show outlier radiologists who take too long to read scans.
+
+### 2. Home Health Routing & Mileage (The "Traveling Nurse" Dataset)
+**The Domain:** Post-Acute Care / Logistics.
+**The Story:** Nurses drive to patients' homes. You are paying thousands in mileage reimbursement and overtime. Are the routes optimized?
+*   **The Schema:** `Fact_Visits` (NurseID, PatientID, Lat/Long, ScheduledTime, ActualArrivalTime, MilesDriven).
+*   **SQL Challenge:** Geospatial clustering. Grouping patients by zip code to see if Nurse A drove past Patient B to get to Patient C (inefficiency).
+*   **Power BI Challenge:** Map visualizations with route lines. Cost analysis of "Windshield Time" (Driving) vs. "Clinical Time" (Treating).
+
+### 3. Sepsis Algorithm Performance (The "Model Audit" Dataset)
+**The Domain:** Clinical Informatics / Data Science Ops.
+**The Story:** The hospital installed an AI algorithm to predict Sepsis. Is it working? Or is it crying wolf (False Positives) causing doctors to ignore it?
+*   **The Schema:** `Fact_Alerts` (PatientID, Timestamp, RiskScore), `Fact_Outcomes` (Did Patient actually have Sepsis? Yes/No, ICD-10 Code).
+*   **SQL Challenge:** Building a **Confusion Matrix** in SQL. Calculating Sensitivity, Specificity, and Positive Predictive Value (PPV) by joining Alerts to Outcomes.
+*   **Power BI Challenge:** A "Model Degradation" chart showing if the algorithm is getting worse over time.
+
+### 4. 340B Drug Pricing & Compliance (The "Regulatory" Dataset)
+**The Domain:** Pharmacy Finance (Huge niche in US Healthcare).
+**The Story:** Hospitals buy drugs at a 50% discount (340B program) for low-income patients. If they give that discounted drug to an *ineligible* patient, they get fined millions.
+*   **The Schema:** `Fact_Dispensing` (DrugNDC, PatientID), `Dim_Patient_Eligibility` (PayerStatus, IndigentFlag), `Fact_Purchases` (WAC_Price, 340B_Price).
+*   **SQL Challenge:** Complex eligibility logic. Matching dispensing timestamps to patient visit timestamps to prove eligibility.
+*   **Power BI Challenge:** "Savings Opportunity" waterfall chart. How much money did we save vs. potential savings lost due to bad data?
+
+### 5. Hospital Dietary & Food Waste (The "Nutrition" Dataset)
+**The Domain:** Support Services / Sustainability.
+**The Story:** The kitchen makes 500 "Renal Diet" meals, but only 300 were ordered. Also, tracking patient nutrient intake vs. doctor orders.
+*   **The Schema:** `Fact_Meal_Orders` (PatientID, DietType, Calories, Sodium), `Fact_Production` (MealsPrepared, MealsDiscarded, CostPerMeal).
+*   **SQL Challenge:** Gap analysis between `Ordered_Diet` (Doctor's orders) and `Tray_Delivered` (Did the diabetic patient get a cake?).
+*   **Power BI Challenge:** Waste reduction dashboard. Visualizing "Most Wasted Items" and cost impact.
+
+### 6. HVAC & Infection Control (The "Facilities" Dataset)
+**The Domain:** Engineering / Safety.
+**The Story:** Operating Rooms and Isolation Rooms need specific air pressure (Positive/Negative) and Humidity. If humidity drops, static electricity can spark fires in oxygen-rich ORs.
+*   **The Schema:** `Fact_Sensor_Readings` (RoomID, Timestamp_5min, PressureDifferential, Humidity, Temp).
+*   **SQL Challenge:** Time-series "Islands and Gaps". Identifying continuous durations where a room was "Out of Spec" for > 30 minutes.
+*   **Power BI Challenge:** Floorplan Heatmap. Coloring rooms Red/Green based on current air safety status.
+
+### 7. Physical Therapy Recovery Curves (The "Rehab" Dataset)
+**The Domain:** Clinical Outcomes.
+**The Story:** Patient A and Patient B both have knee replacements. Patient A walks in 2 weeks; Patient B takes 6 weeks. Why?
+*   **The Schema:** `Fact_Assessments` (PatientID, Date, FIM_Score - Functional Independence Measure, PainLevel).
+*   **SQL Challenge:** Calculating the **Slope** of recovery (Rate of improvement) per patient. Ranking Therapists by their patients' recovery speed.
+*   **Power BI Challenge:** "Recovery Trajectory" line charts. Comparing an individual patient against the "Average Recovery Curve."
+
+### 8. Chargemaster (CDM) Price Transparency (The "Pricing" Dataset)
+**The Domain:** Revenue Cycle / Compliance.
+**The Story:** US Hospitals must publish their prices. You are comparing your hospital's prices against 3 competitors for "MRI Brain" and "C-Section".
+*   **The Schema:** `Dim_CDM` (CPT_Code, Description, Gross_Charge, Cash_Price, Negotiated_Payer_A_Price, Negotiated_Payer_B_Price).
+*   **SQL Challenge:** Fuzzy matching CPT codes or Descriptions across different hospital datasets (Data Cleaning nightmare).
+*   **Power BI Challenge:** Competitive Benchmarking Radar Chart. "Are we the most expensive hospital in the city?"
+
+### 9. Patient Transport Logistics (The "Porter" Dataset)
+**The Domain:** Hospital Operations.
+**The Story:** A patient is stuck in his room waiting for a wheelchair to go to Radiology. The MRI machine is empty waiting for the patient. The transporter is missing.
+*   **The Schema:** `Fact_Transport_Jobs` (RequestTime, PickupTime, DropoffTime, Origin, Destination, TransporterID).
+*   **SQL Challenge:** Calculating "Job Efficiency" and "Idle Time". Determining peak demand hours for wheelchairs.
+*   **Power BI Challenge:** Staffing optimization. Histogram of transport requests by hour vs. Number of staff on shift.
+
+### 10. Provider Credentialing & Expiry (The "HR Risk" Dataset)
+**The Domain:** Medical Staff Office / HR.
+**The Story:** If a doctor operates with an expired license, insurance won't pay and the hospital gets sued. You need to track thousands of expiration dates.
+*   **The Schema:** `Dim_Provider` (ProviderID), `Fact_Credentials` (CredType: StateLicense, DEA, BoardCert, MalpracticeIns), `Date_Expires`.
+*   **SQL Challenge:** Date logic. Identifying providers who expire in < 30, < 60, < 90 days. Handling "Grace Periods."
+*   **Power BI Challenge:** "Compliance Risk Radar." A countdown dashboard showing exactly who needs to be suspended *tomorrow* if they don't renew.
+
+---
+
+### Which one fits your goals?
+
+*   **For pure SQL Complexity:** #4 (**340B**) or #1 (**Radiology TAT**) involve difficult join logic and timestamps.
+*   **For Visualization/Design:** #2 (**Home Health Map**) or #6 (**HVAC Floorplan**) are visually stunning.
+*   **For Data Science/Stats:** #3 (**Sepsis Model**) or #7 (**Recovery Curves**) require statistical thinking.
