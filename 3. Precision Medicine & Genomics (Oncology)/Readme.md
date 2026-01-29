@@ -6,8 +6,6 @@
 
 **Last updated:** 2026-01-29
 
----
-
 ## 1. Executive Summary and Strategic Vision
 
 This Project Bible defines the end-to-end architecture, governance model, and analytical capabilities for a Precision Medicine and Genomics analytics platform focused on Oncology. Built on the Snowflake Data Cloud with Snowpark and Streamlit, the platform enables scalable, secure integration of genomic, clinical, and outcomes data to support personalized treatment decisions, translational research, and operational excellence in cancer care.
