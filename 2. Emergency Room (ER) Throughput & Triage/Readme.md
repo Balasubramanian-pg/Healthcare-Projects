@@ -1,21 +1,266 @@
-Project Charter: Emergency Department (ED) Throughput & Triage AnalyticsTechnical Architecture: Snowflake Data Cloud, Snowpark (PySpark/Python), Snowflake SQL, Streamlit.Target Domain: Healthcare Operational Excellence, Clinical Informatics, Strategic Resource Management.1. Executive Summary and Strategic VisionThis initiative seeks to architect a high-fidelity, real-time analytics ecosystem within the Snowflake Data Cloud to address the systemic challenges of Emergency Department (ED) overcrowding and throughput inefficiency. By synthesizing high-frequency Electronic Health Record (EHR) data streams through advanced Snowpark processing, the organization will transition from retrospective reporting to a proactive, predictive triage posture. The primary objective is to mitigate current operational bottlenecks while enhancing the precision of resource allocation over a rolling four-hour forecast window.1.1 Primary Strategic Objectives:Systemic Bottleneck Identification: The system shall facilitate the precise identification of "Boarding" latencies—the critical interval during which admitted patients remain in the ED pending inpatient bed availability. This necessitates the granular monitoring of Environmental Services (EVS) for sanitation efficiency, nursing handover protocols, and the responsiveness of patient transport units. By visualizing these micro-delays in real-time, the organization aims to reduce median boarding durations by 15–20%, thereby freeing up ED beds for new arrivals.Clinical Safety and Quality Assurance: To reduce the incidence of "Left Without Being Seen" (LWBS) events—a significant clinical risk and source of substantial revenue attrition—the system will implement automated surveillance of high-acuity cohorts. Automated notification protocols will escalate patient status to the Charge Nurse and attending physicians when ESI-2 (Emergency Severity Index) patients exceed the 15-minute threshold without a formal provider assignment.Dynamic Resource Optimization: Alignment of clinical staffing (nurses, physicians, and mid-level providers) with forecasted arrival surges will be achieved by integrating historical seasonality, localized municipal event data (e.g., sporting events or festivals), and real-time emergency medical services (EMS) dispatch feeds. This optimization seeks to minimize "Door-to-Provider" latency while maintaining staff equilibrium to prevent occupational burnout and moral injury.Clinical Triage Validation: The framework will evaluate the accuracy of ESI assignments through the retrospective analysis of clinical outcomes and resource intensity. By correlating initial triage acuity with eventual ICU admission rates, diagnostic test volume, or surgical interventions, the system provides objective, data-driven feedback to clinical staff to refine triage sorting methodologies and ensure high-risk patients are prioritized correctly.2. Phase I: Discovery and Clinical Requirements2.1 Stakeholder Mapping and Value PropositionTo ensure enterprise-wide adoption, the analytical framework must address the specific requirements of several key institutional personas:Medical Directorate: Prioritizes "Door-to-Provider" metrics and physician-specific throughput efficiency. Requirements include the correlation of Relative Value Units (RVUs) with wait-time data to evaluate the relationship between clinician productivity, clinical complexity, and patient satisfaction benchmarks (HCAHPS).Nursing Administration: Focuses on "Triage-to-Bed" flow and nursing unit ratios. Requires real-time alerts for waiting-room stasis and algorithmic "Pod" assignments based on current nursing bandwidth, geographical proximity within the department, and patient acuity mix.Chief Quality Office (CQO): Concerned with regulatory compliance and CMS Core Measures, specifically OP-18 (Median time from ED arrival to ED departure for discharged patients). Requires longitudinal datasets to facilitate hospital accreditation (The Joint Commission) and performance improvement mandates.Information Security & Data Engineering: Responsible for the structural integrity and performance of Snowflake pipelines. This team ensures that data latency remains below 60 seconds between EHR event generation and dashboard synchronization, while strictly adhering to ACID compliance, HIPAA regulations, and the principle of least privilege.2.2 Clinical Milestones and Temporal DefinitionsStandardization of the patient journey from arrival to departure is paramount for data integrity. The following "T-Milestones" have been established to delineate the patient lifecycle:Arrival (T0): The definitive check-in timestamp. For EMS arrivals, this corresponds to the moment of physical handover to the ED staff; for ambulatory arrivals, it is the initial kiosk or registration event. This marks the commencement of the "Length of Stay" (LOS) metric.Triage Completion (T1): The finalization of the ESI level (1–5) within the EHR. This milestone encompasses the documentation of the "Chief Complaint" and the acquisition of the initial physiological vitals: heart rate, blood pressure, temperature, oxygen saturation, and respiratory rate.Provider Assignment (T2): The assumption of care by a Licensed Independent Practitioner (LIP). This transition signifies the movement from a passive "Waiting" state to "Active Treatment."Diagnostic Interval (T2.5): A critical sub-phase involving Laboratory Turnaround Time (TAT)—from order to collection to result—and Diagnostic Imaging TAT. These intervals are frequently identified as the primary drivers of ED stagnation and "dwell time."Decision to Admit (T3a): The entry of a formal "Inpatient Admission" order. This triggers the "Boarding" phase and prioritizes the patient within the inpatient bed-placement queue, alerting environmental services and the receiving floor nursing staff.Disposition Finalization (T3b): The formal discharge order by the physician, signifying the conclusion of the acute clinical phase and the start of the discharge education process.Physical Departure (T4): The "Wheels Out" timestamp. The duration between T3a and T4 constitutes Boarding Time, the primary indicator for hospital capacity and throughput efficacy.3. Phase II: Data Ingestion and Bronze Layer (Raw)3.1 Multi-Modal Data Source IntegrationA comprehensive data acquisition strategy is required to capture a holistic operational overview, transcending traditional, static EHR extracts:EHR Interoperability (Epic/Cerner): Continuous HL7 v2 (ADT/ORU/ORM) telemetry or FHIR R4 API integration. ADT (Admission, Discharge, Transfer) messages serve as the foundational data for real-time spatial tracking across clinical zones.Laboratory Information Management (LIMS): Monitoring "Order-to-Result" intervals for critical biomarkers (e.g., Troponin for cardiac events or Toxicology), which are essential for cardiac, stroke, and behavioral health pathways.Radiology Informatics (PACS/RIS): Monitoring imaging turnaround times, with a specific focus on CT/MRI modalities for trauma or neurological events where "Time is Brain."Workforce Management Systems: Integration of staffing rosters (e.g., Kronos) to calculate "Nurse-to-Patient" ratios and physician coverage. This enables the modeling of personnel shortages on system-wide throughput and wait times.External Contextual Streams: Integration of meteorological data (heatwaves/cold snaps), public health trends (e.g., epidemiological spikes or flu trends via CDC APIs), and EMS dispatch telemetry to facilitate predictive surge management.3.2 Ingestion Architecture: Snowpipe ImplementationAutomated, serverless ingestion via Snowpipe will be utilized to maintain real-time data currency. Data will be preserved in an immutable Bronze layer to facilitate retrospective reprocessing as clinical logic, medical guidelines, or regulatory requirements evolve.Ingestion Endpoint: Encrypted cloud storage (S3/GCS/Azure Blob) acting as a secure landing zone for JSON, NDJSON, or Parquet formatted payloads.Governance: Storage integrations and IAM roles will be used to ensure Snowflake has secure, credential-less access to the landing zone.Automated Pipeline Specification:CREATE OR REPLACE PIPE BRONZE.ER_INGEST_PIPE
+# Emergency Department Throughput & Triage Analytics
+
+**Project Bible | Snowflake Data Cloud, Snowpark, Streamlit**
+
+**Version:** 1.0
+
+**Last updated:** 2026-01-29
+
+## 1. Executive Summary and Strategic Vision
+
+This Project Bible defines the architecture, data flows, operational use cases, governance, and implementation roadmap for an ED throughput and triage analytics platform built on Snowflake and Snowpark with Streamlit-driven operational UX. The system will move the organization from retrospective reporting to near real-time situational awareness and short-term forecasting (rolling 4-hour horizon). Core outcomes include measurable reductions in boarding time, fewer LWBS events, and improved triage accuracy.
+
+## 2. Strategic Objectives
+
+* **Systemic bottleneck identification**
+
+  * Identify boarding latency drivers (EVS, transport, handovers) and reduce median boarding time by 15 to 20 percent.
+* **Clinical safety and quality assurance**
+
+  * Reduce LWBS by automated surveillance and escalation for high-acuity patients.
+* **Dynamic resource optimization**
+
+  * Align staffing to forecasted arrival surges using historical seasonality and external context feeds.
+* **Clinical triage validation**
+
+  * Correlate ESI with downstream resource intensity and outcomes to provide feedback loops for triage staff.
+
+## 3. Success Criteria and KPIs
+
+* Median boarding time reduced by 15 to 20 percent relative to baseline.
+* LWBS rate reduced by X percent (define baseline and target in workshop).
+* Door-to-provider median time within target threshold (facility-specific target).
+* Prediction lead time of at least 4 hours for high-confidence admission events (probability threshold configurable).
+* Data latency from EHR event to dashboard under 60 seconds.
+
+## 4. Scope and Boundaries
+
+* **Included**: Real-time ADT, observation vitals, orders/results, imaging events, workforce rosters, EMS feeds, and external context streams.
+* **Excluded**: Full clinical chart review, billing adjudication, and full-scale population health analytics outside ED operations (can be future phases).
+
+## 5. Stakeholders and Roles
+
+* **Executive Sponsor**: Chief Medical Officer or Chief Operating Officer
+* **Clinical Stakeholders**: Medical Directorate, Nursing Administration, Charge Nurses, ED Physicians
+* **Quality and Compliance**: Chief Quality Office
+* **Data & Security**: Information Security, Data Engineering
+* **Operations & Support**: ED Operations Manager, Bed Management, Environmental Services
+* **Deliverable Owners**: BI Engineer (Snowflake pipelines), Data Scientist (Snowpark ML), Frontend Lead (Streamlit dashboards)
+
+## 6. Patient Journey Milestones (T-Milestones)
+
+Define canonical timestamps to ensure consistent measurement and analytics:
+
+* **T0 - Arrival**: Definitive check-in or EMS handover timestamp.
+* **T1 - Triage Completion**: ESI assigned and vitals recorded.
+* **T2 - Provider Assignment**: LIP assumes care.
+* **T2.5 - Diagnostic Interval**: Lab and imaging order-to-result intervals.
+* **T3a - Decision to Admit**: Formal inpatient admission order.
+* **T3b - Disposition Finalization**: Discharge order or disposition executed.
+* **T4 - Physical Departure**: Wheels out timestamp. Boarding time = T4 - T3a.
+
+## 7. High-Level Architecture
+
+* **Cloud Data Platform**: Snowflake Data Cloud with separate Bronze, Silver, Gold layers.
+* **Processing**: Snowpark (Python/PySpark compatible) for stateful transforms, temporal spine, and ML.
+* **Ingestion**: Snowpipe for serverless, near real-time ingestion from secure cloud storage.
+* **Presentation**: Streamlit for operational HUDs and leadership dashboards.
+* **Security**: RBAC, Row Level Security, Dynamic Data Masking, PHI tagging.
+
+## 8. Phase-by-Phase Implementation
+
+### Phase 1: Discovery and Clinical Requirements
+
+* Conduct workshops with Medical Directorate, Nursing, CQO, InfoSec.
+* Establish baseline metrics for boarding, LWBS, door-to-provider, 72-hour revisits.
+* Agree on T-milestones and canonical event definitions.
+
+### Phase 2: Bronze Layer - Ingestion
+
+* Implement Snowpipe and landing zones (S3/GCS/Azure Blob).
+* Retain raw payloads (JSON/NDJSON/Parquet) immutable for reprocessing.
+* Example pipeline snippet:
+
+```sql
+CREATE OR REPLACE PIPE BRONZE.ER_INGEST_PIPE
 AUTO_INGEST = TRUE
 AS
 COPY INTO BRONZE.RAW_ER_MESSAGES
 FROM @EXT_STAGE/ER_DATA/
 FILE_FORMAT = (TYPE = 'JSON')
 ON_ERROR = 'SKIP_FILE';
-4. Phase III: Data Engineering and Silver Layer (Staging)4.1 Data Transformation and NormalizationHealthcare data structures are characterized by high levels of nesting, polymorphism, and variability. The framework will utilize Snowflake’s native FLATTEN functionality to transform FHIR resources into a relational staging format. This transformation is vital for computational efficiency, as operations on flattened schemata significantly outperform semi-structured data scans in terms of both speed and credit consumption.Implementation Detail: Physiological Data ExtractionExtraction of "Observations" from FHIR arrays will filter by specific LOINC identifiers (e.g., 8480-6 for systolic blood pressure), pivoting the data to ensure each encounter is represented by a single, comprehensive record of the triage state.CREATE OR REPLACE TABLE SILVER.STG_VITALS AS
+```
+
+* Logging and monitoring: configure Snowpipe usage monitors and alerting for ingestion failures.
+
+### Phase 3: Silver Layer - Normalization and Staging
+
+* Flatten FHIR/HL7 payloads into relational staging tables.
+* Normalize vitals, ADT snapshots, orders, results, and imaging metadata.
+* Example vitals transform:
+
+```sql
+CREATE OR REPLACE TABLE SILVER.STG_VITALS AS
 SELECT
-    src:subject.reference::string AS patient_id,
-    src:encounter.reference::string AS encounter_id,
-    -- Pivoting observations via standardized LOINC codes to handle multi-row JSON arrays
-    MAX(CASE WHEN src:code.coding[0].code = '8480-6' THEN src:valueQuantity.value END) AS systolic_bp,
-    MAX(CASE WHEN src:code.coding[0].code = '8867-4' THEN src:valueQuantity.value END) AS heart_rate,
-    MAX(CASE WHEN src:code.coding[0].code = '2708-6' THEN src:valueQuantity.value END) AS oxygen_sat,
-    src:effectiveDateTime::timestamp AS recorded_at
+  src:subject.reference::string AS patient_id,
+  src:encounter.reference::string AS encounter_id,
+  MAX(CASE WHEN src:code.coding[0].code = '8480-6' THEN src:valueQuantity.value END) AS systolic_bp,
+  MAX(CASE WHEN src:code.coding[0].code = '8867-4' THEN src:valueQuantity.value END) AS heart_rate,
+  MAX(CASE WHEN src:code.coding[0].code = '2708-6' THEN src:valueQuantity.value END) AS oxygen_sat,
+  src:effectiveDateTime::timestamp AS recorded_at
 FROM BRONZE.RAW_ER_MESSAGES
 WHERE src:resourceType = 'Observation'
 GROUP BY 1, 2, 4
 QUALIFY ROW_NUMBER() OVER (PARTITION BY encounter_id ORDER BY recorded_at DESC) = 1;
-4.2 Data Integrity and De-identificationCollision Mitigation: Handling redundant or out-of-order message streams via QUALIFY ROW_NUMBER() logic to ensure only the most recent state of a clinical record is persisted in the Silver layer.Temporal Standardization: Conversion of all clinical timestamps to UTC at the Silver level. Localized facility timezones are maintained in a supporting dimension to ensure shift-change reports and nursing handovers remain operationally relevant to the local wall-clock time.Identity Resolution: Implementation of cryptographic hashing for patient identifiers and Luhn-compliant MRN validation to ensure data segregation across multi-campus environments while maintaining the ability to link records for longitudinal analysis.5. Phase IV: Advanced Analytics and Snowpark (Gold Layer)The Snowpark environment serves as the analytical core, facilitating complex state-management, time-series analysis, and machine learning workflows that surpass the capabilities of traditional declarative SQL.5.1 Real-Time Census Management and Crowding MetricsCalculating the exact patient census at any given interval requires a stateful representation of the department’s occupancy. This cannot be achieved through simple aggregation; it requires calculating the overlap of "Arrival" and "Departure" intervals against a continuous time-spine.Snowpark Stateful Processing Workflow:Temporal Spine Construction: Creation of a DataFrame representing discrete one-minute intervals for the preceding 24-hour period.Interval Analysis: A join operation between the temporal spine and the encounter dataset where the minute interval falls within the [Arrival, Departure] range.Density Computation: Calculation of the "Crowding Index" (Occupied Beds vs. Total Licensed Beds). Indices exceeding 1.2 will automatically trigger a "Diversion Status" recommendation, signaling to the regional EMS network that the facility is at capacity.5.2 Chief Complaint Enrichment via Natural Language Processing (NLP)Free-text chief complaints frequently contain latent clinical risks that initial manual triage may overlook due to high volume or fatigue. A Snowpark-hosted Python UDF will be employed to categorize these inputs into "High Risk Symptom" (HRS) classifications.Methodology: Utilization of spaCy or scikit-learn within the secure Snowflake Python environment to perform entity recognition and sentiment analysis on clinical notes.Clinical Implications: Detection of critical semantic markers (e.g., "unilateral weakness," "crushing chest pressure," or "thunderclap headache") will trigger a "Triage Discordance" alert if the patient was assigned a low-acuity ESI level (4 or 5), prompting an immediate physician re-evaluation.5.3 Predictive Admission Modeling (Snowpark ML)Utilizing Snowpark ML, a classification model will be developed to estimate the probability of inpatient admission at the conclusion of the triage process, long before the diagnostic workup is complete.Feature Engineering: Features include patient age, arrival modality (Ambulance vs. Walk-in), ESI level, physiological deviations (z-scores relative to age-matched norms), and NLP-derived complaint categories.Model Lifecycle: An XGBoostClassifier is trained within Snowflake compute, persisted as a versioned object in a Snowflake Stage, and invoked for real-time inference during the Silver-to-Gold transformation pipeline.Operational Utility: A PROBABILITY_OF_ADMIT > 0.85 generates an early-warning notification for Inpatient Bed Management, facilitating bed preparation and staffing adjustments up to four hours prior to formal physician disposition.6. Phase V: KPI Architecture and Governance6.1 Star Schema Design: FACT_ER_PERFORMANCEThe Fact table is optimized for analytical performance across millions of clinical encounters, supporting both real-time dashboards and long-term strategic planning.Quantitative Metrics: Pre-calculated durations for all T-milestones (Wait Time, Treatment Time, Boarding Time) in minute increments.Quality Indicators: Boolean flagging of 72-hour revisits (potential clinical failures), LWBS events, and departures "Against Medical Advice" (AMA).Contextual Attributes: Capture of attending physician, primary nurse, and physical bed location (e.g., Hallway vs. Room) to evaluate the impact of environmental variables on patient outcomes and LOS.6.2 Security and HIPAA Compliance FrameworkSnowflake’s native security suite is leveraged to ensure a "Zero Trust" architecture for sensitive health data, ensuring compliance with HIPAA and HITECH acts.Dynamic Data Masking: Systematic obfuscation of patient identifiers (Name, DOB, SSN) based on the user's Role-Based Access Control (RBAC) profile. Administrators see masked data, while authorized clinical directors see clear text.Row-Level Security (RLS): Ensures that clinicians only see data for patients within their specific facility or region, preventing unauthorized cross-site data access.Data Lineage and Tagging: Automated tagging of columns containing Protected Health Information (PHI) with SENSITIVITY_LEVEL = 'PHI', facilitating comprehensive, automated compliance auditing and impact analysis for schema changes.7. Conclusion and Implementation RoadmapBy consolidating clinical, operational, and financial data into a unified Snowflake environment, the organization can dismantle the data silos that impede ED efficiency and patient safety. The integration of Snowflake SQL for structural reliability and Snowpark for advanced computational intelligence provides a robust foundation for precision management in emergency medicine.Implementation Timeline:Month 1: Establishment of Snowpipe ingestion and Silver layer normalization for ADT and physiological data streams.Month 2: Deployment of the FACT_ER_PERFORMANCE schema and initial operational dashboards via Streamlit.Month 3: Production launch of the Snowpark ML "Admission Predictor" and the real-time "Heads-Up Display" (HUD) for clinical leadership.
+```
+
+* Implement deduplication and temporal standardization to UTC. Maintain facility timezone dimension.
+
+### Phase 4: Gold Layer - Analytics and Snowpark
+
+* Implement FACT_ER_PERFORMANCE star schema and dimensions (patient, provider, bed, time, facility).
+* Build stateful Snowpark pipelines for temporal spine and minute-level occupancy calculation.
+* Implement NLP enrichment as Snowpark Python UDFs for chief complaint classification.
+* Train and deploy Snowpark ML models (Admission predictor) with versioning and staging.
+
+### Phase 5: Presentation and Operationalization
+
+* Streamlit HUDs for real-time leaders and shift-level Streamlit pages for charge nurses.
+* Automated alerts (Slack, SMS, EHR inbox) driven by rule engine or model thresholds.
+* Operational runbooks and escalation paths defined for each alert type.
+
+## 9. Data Model and Schema
+
+### FACT: FACT_ER_PERFORMANCE (sample columns)
+
+* encounter_id
+* facility_id
+* arrival_ts_utc
+* triage_complete_ts_utc
+* provider_assigned_ts_utc
+* decision_to_admit_ts_utc
+* departure_ts_utc
+* boarding_minutes
+* door_to_provider_minutes
+* disposition_type
+* lwbs_flag
+* revisit_72h_flag
+* attending_provider_id
+* primary_nurse_id
+
+### DIMENSIONS (high level)
+
+* DIM_TIME (minute granularity)
+* DIM_PATIENT (hashed IDs, non-reversible tokens)
+* DIM_PROVIDER
+* DIM_FACILITY
+* DIM_BED_LOCATION
+
+## 10. Analytics and ML Patterns
+
+* **Temporal Spine Occupancy**
+
+  * Build minute-level spine and join encounter intervals to compute occupancy and crowding index.
+* **NLP Chief Complaint Enrichment**
+
+  * Snowpark hosted Python UDF using spaCy or scikit-learn to classify free text into HRS categories.
+* **Admission Probability Model**
+
+  * XGBoostClassifier trained in Snowpark ML with features: age, arrival mode, ESI, vitals z-scores, complaint category.
+  * Persist model artifact to a Snowflake Stage and deploy as a scoring UDF.
+
+## 11. Security, Privacy, and Compliance
+
+* Enforce least privilege RBAC for all objects.
+* Tag PHI columns with SENSITIVITY_LEVEL = 'PHI'.
+* Configure Dynamic Data Masking and Row Level Security for multi-facility restrictions.
+* Maintain audit logs for access and data lineage for regulatory review.
+
+## 12. Monitoring and Observability
+
+* Data latency dashboards: ingestion lag, Silver transform lag, model scoring lag.
+* Platform health: Snowflake credit usage, Snowpipe failure rate, Streamlit availability.
+* Operational alerts: trigger on defined thresholds and on data anomalies.
+
+## 13. Alerts and Runbooks (examples)
+
+* **High Acuity Unassigned**
+
+  * Condition: ESI 2 patient without provider assignment for > 15 minutes.
+  * Action: Send automated EHR inbox alert to Charge Nurse and attending physician. Escalate to ED Director at 30 minutes.
+* **Crowding Diversion Recommendation**
+
+  * Condition: Crowding Index > 1.2 for 20 consecutive minutes.
+  * Action: Notify Bed Management and issue diversion recommendation to EMS through established protocols.
+
+## 14. Governance and Data Ownership
+
+* **Data Owners**: Clinical Data Steward, Lab Informatics, Radiology Informatics.
+* **Platform Owner**: Data Engineering Team.
+* **Change Control**: Every schema or pipeline change requires a documented change request and impact analysis.
+* **Audit and Validation**: Monthly data quality reviews and quarterly governance meetings.
+
+## 15. Implementation Timeline and Milestones
+
+* **Month 0 (Planning)**
+
+  * Stakeholder workshops, finalize T-milestones, define baseline KPIs.
+* **Month 1**
+
+  * Snowpipe ingestion for ADT and vitals. Silver layer normalization for ADT and vitals. Basic Streamlit operational dashboard prototype.
+* **Month 2**
+
+  * FACT_ER_PERFORMANCE deployed. Additional Silver transforms (orders, labs, imaging). Initial predictive models in dev.
+* **Month 3**
+
+  * Production launch of Admission Predictor and real-time HUD. Alerting and runbooks operational. Post-launch monitoring and tuning.
+
+## 16. Roles, Responsibilities, and RACI
+
+* **Project Sponsor**: Approve budget, escalations, and priorities. (Responsible: Executive Sponsor)
+* **Product Owner**: Define clinical requirements and acceptance criteria. (Responsible: ED Clinical Lead)
+* **Data Engineering**: Build Snowflake objects, Snowpipe, and transforms. (Responsible: BI/Data Engineering)
+* **Data Science**: Model development and validation. (Responsible: Data Scientist)
+* **DevOps/Platform**: Manage Streamlit deployment and monitoring. (Responsible: Frontend/Platform)
+* **Clinical SMEs**: Provide domain validation and approve alerts. (Accountable/Consulted)
+
+## 17. Risk Register and Mitigations
+
+* **Risk: Data latency exceeds 60 seconds**
+
+  * Mitigation: Increase Snowpipe concurrency, tune micro-batching, implement health checks and backfill strategy.
+* **Risk: False positive alerts causing alarm fatigue**
+
+  * Mitigation: Calibrate thresholds with clinical teams, create severity tiers, and implement suppression windows.
+* **Risk: PHI exposure**
+
+  * Mitigation: Enforce RLS, masking, audit logs, and periodic access reviews.
+
+## 18. Acceptance Criteria and Handover
+
+* All T-milestones are captured for 95 percent of encounters in production.
+* Ingestion latency consistently below 60 seconds on operational days.
+* Admission predictor meets defined AUC/precision thresholds on held-out validation set.
+* Operational users accept Streamlit HUD in user acceptance testing.
+
+## 19. Appendix
+
+### 19.1 Glossary
+
+* ADT - Admission Discharge Transfer
+* ESI - Emergency Severity Index
+* LWBS - Left Without Being Seen
+* TAT - Turnaround Time
+* PHI - Protected Health Information
+
+### 19.2 Example SQL Snippets
+
+* Snowpipe creation (see Phase 2)
+* Vitals transform (see Phase 3)
+
+### 19.3 Contacts and Communication Plan
+
+* Project Slack channel: #ed-throughput-ops
+* Weekly cadence: 30 minute standup with Data Engineering and Clinical Lead
+* Monthly governance: 60 minute review with Sponsor and CQO
+
