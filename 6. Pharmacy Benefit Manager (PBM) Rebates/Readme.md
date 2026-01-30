@@ -4,8 +4,6 @@
 
 ### Snowflake-Based Enterprise Data Architecture
 
----
-
 ## Executive Summary
 
 Pharmacy Benefit Managers (PBMs) sit at the financial and operational center of the U.S. prescription drug ecosystem. One of their most complex and least transparent functions is the administration of manufacturer rebates. Rebates are negotiated payments from pharmaceutical manufacturers to PBMs or plan sponsors in exchange for formulary placement or market share guarantees. While rebates are often positioned as a cost-containment mechanism, they introduce material complexity across contracting, adjudication, accounting, reporting, and compliance.
@@ -13,8 +11,6 @@ Pharmacy Benefit Managers (PBMs) sit at the financial and operational center of 
 This Project Bible defines an enterprise-grade analytics and data platform for PBM rebate management, built on Snowflake. The platform is designed to provide a single source of truth for rebate eligibility, accruals, invoicing, collections, and downstream pass-through to clients. It emphasizes auditability, regulatory readiness, and financial accuracy while remaining scalable across millions of claims and thousands of contracts.
 
 The document is written as if the platform were to be implemented by a real PBM or health benefits organization. Architectural decisions, modeling choices, and governance controls are explicitly justified, with trade-offs discussed. Assumptions are clearly labeled where real-world variability exists.
-
----
 
 ## Business Context and Problem Statement
 
@@ -49,8 +45,6 @@ Withstand financial audits and regulatory review
 
 This project addresses that gap.
 
----
-
 ## Goals and Success Criteria
 
 ### Strategic Goals
@@ -73,8 +67,6 @@ Audit and compliance teams can trace reported values to source data with documen
 
 The architecture scales to support growth in claims volume, contracts, and client complexity.
 
----
-
 ## Stakeholders and Personas
 
 ### Executive Stakeholders
@@ -96,8 +88,6 @@ Analysts build client reports, internal dashboards, and ad hoc analyses. They ne
 ### Audit and Compliance
 
 Audit teams require lineage, controls, and repeatability. They prioritize traceability over speed.
-
----
 
 ## Data Source Landscape
 
@@ -123,8 +113,6 @@ General ledger, accounts receivable, and cash application systems track financia
 
 This project assumes read-only access to source systems via batch extracts or CDC feeds. Real-time integration is out of scope.
 
----
-
 ## Architecture Overview
 
 ### Architectural Principles
@@ -148,8 +136,6 @@ Source data is ingested into Snowflake with minimal transformation. Subsequent l
 
 All transformations are expressed as code, not manual processes.
 
----
-
 ## Data Modeling Strategy
 
 ### Modeling Philosophy
@@ -169,8 +155,6 @@ Time-bound eligibility
 Retroactive adjustments
 
 These are addressed through explicit bridge tables and effective dating.
-
----
 
 ## Core Domain Entities
 
@@ -192,8 +176,6 @@ Contracts represent agreements with manufacturers. Each contract has effective d
 
 A rebate program is a logical construct that ties contracts to calculation logic. It allows reuse of logic across manufacturers.
 
----
-
 ## Data Engineering Pipelines
 
 ### Ingestion
@@ -213,8 +195,6 @@ Each model is idempotent and deterministic. Re-runs produce identical results gi
 Claims data is processed incrementally based on service date and load date. Late-arriving data is handled via reprocessing windows.
 
 Contracts are versioned. Historical calculations reference the contract version effective at the time of service.
-
----
 
 ## Rebate Calculation Logic
 
@@ -237,8 +217,6 @@ This enables explanation of how each dollar was calculated.
 ### Accruals
 
 Accruals are calculated monthly based on eligible claims. Accrual snapshots are preserved to support period reporting.
-
----
 
 ## Analytics and Metrics Framework
 
@@ -358,4 +336,3 @@ By centralizing logic, preserving lineage, and aligning stakeholders around a si
 ## Verification and Uncertainty Notes
 
 Certain industry practices and rebate structures vary significantly by organization and contract. Where specific implementations differ, assumptions have been explicitly labeled. Regulatory interpretations may evolve; governance and compliance sections should be reviewed periodically with legal and compliance teams.
-
