@@ -2,7 +2,7 @@
 
 **Goal:** build a Snowflake-based SDoH data platform and deliver Power BI visualizations that support population-health analysis, intervention planning, and operational reporting.
 
----
+
 
 ## 1. Executive summary
 
@@ -10,7 +10,7 @@
 * **Outcomes:** population risk maps, cohort discovery by SDoH, intervention impact metrics, integration with EHR/claims, and operational dashboards for care managers.
 * **Primary sources (examples):** official SDoH domain definitions and public datasets (Healthy People 2030, CDC SVI, Area Deprivation Index, ICD-10 Z codes). ([Health.gov][1])
 
----
+
 
 ## 2. Stakeholders and roles
 
@@ -21,7 +21,7 @@
 * **Security & compliance:** privacy officer (PHI/HIPAA), legal.
 * **Consumers:** care managers, clinicians, population health analysts, program managers.
 
----
+
 
 ## 3. Data inventory (recommended starting set)
 
@@ -45,7 +45,7 @@
 
   * Census-to-patient geocoding, aggregated SDoH risk scores, time series of social needs referrals.
 
----
+
 
 ## 4. SDoH conceptual model & domains
 
@@ -54,7 +54,7 @@
   * Economic stability; Education access and quality; Health care access and quality; Neighborhood and built environment; Social and community context. ([Health.gov][1])
 * Map each ingested field to: domain → indicator → geographic resolution → update cadence → provenance.
 
----
+
 
 ## 5. Logical architecture (high level)
 
@@ -64,7 +64,7 @@
 * **Curated marts:** domain-specific star schemas (fact_patient_sdohrisk, dim_geography, dim_time, dim_indicator).
 * **Serving / Consumption:** read-optimized schemas for Power BI (materialized views or query result tables + Snowflake reader warehouses). ([Snowflake][5])
 
----
+
 
 ## 6. Snowflake design considerations and best practices
 
@@ -74,7 +74,7 @@
 * **Time travel & fail-safe:** enable minimally for short periods to control costs; retain long-term lineage in curated tables.
 * **Security:** RBAC roles, masking policies for PHI, end-to-end encryption. ([Snowflake][7])
 
----
+
 
 ## 7. Ingestion & transformation patterns
 
@@ -83,7 +83,7 @@
 * **Geocoding:** use deterministic address standardization + external geocoder to get tract/blockgroup to join SVI/ADI.
 * **Z-code mapping:** maintain versioned crosswalk table for ICD-10 Z codes → SDoH indicators because codes update periodically. ([CMS][4])
 
----
+
 
 ## 8. Power BI visualization strategy
 
@@ -108,7 +108,7 @@
 
   * Color palettes that are colorblind-safe, clear tooltips, and exportable tables for care workflows.
 
----
+
 
 ## 9. Data governance, privacy, and compliance
 
@@ -117,7 +117,7 @@
 * **Consent & use policies:** track consent and opt-out flags in the platform.
 * **Audit & lineage:** record source file, ingestion timestamp, and transforming user/process for each table.
 
----
+
 
 ## 10. KPIs, metrics, and sample definitions
 
@@ -126,7 +126,7 @@
 * **Unmet social needs referrals completed:** referrals accepted / referrals issued.
 * **Hospital utilization by SDoH quintile:** ED visits per 1,000 by ADI quintile.
 
----
+
 
 ## 11. Implementation roadmap (12–24 weeks, sample phases)
 
@@ -137,7 +137,7 @@
 * **Phase 4 (Weeks 16–20):** iterate visuals, implement RLS and governance, user acceptance testing.
 * **Phase 5 (Weeks 20–24):** rollout, training, operationalize batch/stream pipelines, monitoring.
 
----
+
 
 ## 12. Deliverables
 
@@ -147,7 +147,7 @@
 * Deployment & runbook: ingestion, alerting, and data quality tests.
 * Training materials and governance playbook.
 
----
+
 
 ## 13. Risks and mitigations
 
@@ -155,7 +155,7 @@
 * **Regulatory / consent constraints:** legal review prior to linking community resources with patient records.
 * **Performance at scale:** precompute aggregates, right-size warehouses, use result-caching. ([Snowflake][5])
 
----
+
 
 ## 14. Monitoring and observability
 
@@ -163,7 +163,7 @@
 * **Usage analytics:** Power BI report usage, query latencies, warehouse credits consumed.
 * **Lineage:** store ETL run metadata and job ids for traceability.
 
----
+
 
 ## 15. Example SQL pattern (conceptual)
 
@@ -175,7 +175,7 @@
   * LEFT JOIN int.icd10_z_crosswalk z ON pa.patient_id = z.patient_id
   * GROUP BY patient_analytic_id, census_tract, ingestion_date
 
----
+
 
 ## 16. Success criteria & KPIs for the program
 
@@ -183,7 +183,7 @@
 * Power BI executive dashboard refresh under 5 seconds for typical queries.
 * Adoption: X users actively using the reports within 60 days. (define X with sponsor)
 
----
+
 
 ## 17. Points that require verification or are uncertain
 
@@ -195,7 +195,7 @@
 
 If any of the items above should be treated as a hard blocker, label them and I will prioritize verification steps.
 
----
+
 
 ## 18. Short explanation of reasoning steps taken
 
@@ -203,7 +203,7 @@ If any of the items above should be treated as a hard blocker, label them and I 
 * Incorporated vendor best practices for Snowflake modeling and serving BI workloads to ensure scalable ELT and query performance. ([Snowflake][5])
 * Mapped implementation phases to typical delivery cadences for data platform engineering and BI sprint cycles.
 
----
+
 
 ## 19. Recommended next steps (short)
 
@@ -211,7 +211,7 @@ If any of the items above should be treated as a hard blocker, label them and I 
 * Approve initial dataset list and obtain access credentials for EHR/claims.
 * Run a 4-week POC: ingest SVI + ADI + 1 month of EHR extracts, build patient geocoding, deliver a one-page Power BI map POC.
 
----
+
 
 ### References (key sources used)
 
@@ -221,7 +221,7 @@ If any of the items above should be treated as a hard blocker, label them and I 
 * CMS / guidance on ICD-10 Z codes for SDoH. ([CMS][4])
 * Snowflake guidance on data warehouse architecture and health industry practices. ([Snowflake][5])
 
----
+
 
 If you want, I can now:
 
