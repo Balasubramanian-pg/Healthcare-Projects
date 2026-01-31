@@ -181,7 +181,7 @@ Here are **5 Unique, Advanced Dataset Ideas** specifically designed to flex **SQ
 
 These move away from standard "Patient/Doctor" data into the high-pressure niches of healthcare operations.
 
----
+
 
 ### 1. The "Operating Room (OR) Tetris" Dataset
 **The Domain:** Surgical Services (The most profitable department in a hospital).
@@ -260,7 +260,7 @@ These move away from standard "Patient/Doctor" data into the high-pressure niche
     *   **Map with Heatmap Layer:** Hotspots for 911 calls (Where do accidents happen?).
     *   **Scatter Plot:** Distance (X-axis) vs. Response Time (Y-axis). Outliers indicate traffic issues or driver error.
 
----
+
 
 ### Which one should we choose?
 
@@ -342,7 +342,7 @@ Here are **10 more unique, high-level dataset ideas** that target specific niche
 *   **SQL Challenge:** Date logic. Identifying providers who expire in < 30, < 60, < 90 days. Handling "Grace Periods."
 *   **Power BI Challenge:** "Compliance Risk Radar." A countdown dashboard showing exactly who needs to be suspended *tomorrow* if they don't renew.
 
----
+
 
 ### Which one fits your goals?
 
