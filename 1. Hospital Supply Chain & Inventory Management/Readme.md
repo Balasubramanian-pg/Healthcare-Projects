@@ -10,7 +10,7 @@ Key verified claims:
 * Use dbt with Snowflake following vendor and community best practices for performance and cost control. ([Snowflake][2])
 * Power BI supports multiple connectivity modes; DirectQuery and import modes have capacity and row-return tradeoffs that affect design. ([Microsoft Learn][3])
 
----
+
 
 ## 1. Objectives and success criteria
 
@@ -28,7 +28,7 @@ Key verified claims:
 * Dashboard latency under 5 seconds for common operational queries.
 * All PHI-handling systems operate under a signed BAA. ([Snowflake Documentation][1])
 
----
+
 
 ## 2. Scope and stakeholders
 
@@ -45,7 +45,7 @@ Key verified claims:
 
 * Supply chain director, procurement, pharmacy, nursing leadership, sterile processing, IT/data engineering, compliance, and vendor management.
 
----
+
 
 ## 3. High-level architecture
 
@@ -66,7 +66,7 @@ Key verified claims:
 * **dbt** for modular, testable transformations and CI/CD pipelines. ([Snowflake][2])
 * **Power BI** for enterprise reporting because of existing BI skillsets and interactive dashboards; choose connectivity mode per dataset size and latency needs. ([Microsoft Learn][3])
 
----
+
 
 ## 4. Data domains and canonical data model
 
@@ -91,7 +91,7 @@ Key verified claims:
 * **fact_inventory_transaction**: transaction_id, item_id, location_id, transaction_type, quantity, unit_cost, transaction_timestamp, source_system, reference_id.
 * **dim_item**: item_id, sku, description, uom, category, manufacturer_id, shelf_life_days, created_at, effective_from, effective_to, current_flag.
 
----
+
 
 ## 5. Ingestion, CDC and change handling
 
@@ -109,7 +109,7 @@ Key verified claims:
 
 * Use a composite business key plus a source_timestamp for deduplication. Apply deterministic `MERGE` statements keyed on (source_system, reference_id, transaction_timestamp).
 
----
+
 
 ## 6. Transformation strategy with dbt
 
@@ -129,7 +129,7 @@ Key verified claims:
 
 * Run dbt unit tests and snapshot SCD logic on every PR. Use ephemeral developer environments and a promotion pipeline (dev → test → prod) with role-based credentials. ([Snowflake][2])
 
----
+
 
 ## 7. Security, privacy and compliance
 
@@ -150,7 +150,7 @@ Key verified claims:
 
 * Data use agreements, training for supply chain staff, retention and purge policies, and documented incident response.
 
----
+
 
 ## 8. Power BI architecture and model strategy
 
@@ -186,7 +186,7 @@ Key verified claims:
   ReorderFlag = IF([DaysOfStock] <= [SafetyStockDays], 1, 0)
   ```
 
----
+
 
 ## 9. Inventory analytics and optimization
 
@@ -225,7 +225,7 @@ Digit-by-digit arithmetic:
 
 Interpretation: maintain 50 units as safety stock for that SKU.
 
----
+
 
 ## 10. Operationalization, monitoring and SLOs
 
@@ -242,7 +242,7 @@ Interpretation: maintain 50 units as safety stock for that SKU.
 * Weekly: reconcile physical counts vs system on-hand for sample SKUs.
 * Monthly: inventory turnover, audit log review, access reviews.
 
----
+
 
 ## 11. CI/CD, environments and deployments
 
@@ -258,7 +258,7 @@ Interpretation: maintain 50 units as safety stock for that SKU.
 
 * Use orchestration (Airflow, GitHub Actions, or Snowflake Tasks) to orchestrate Snowpipe, dbt runs, and downstream refreshes.
 
----
+
 
 ## 12. Cost, licensing and sizing considerations
 
@@ -272,7 +272,7 @@ Interpretation: maintain 50 units as safety stock for that SKU.
 
 > Note: cost figures depend on contract terms and regional pricing and must be validated with procurement and platform providers. See the “Verification” section below.
 
----
+
 
 ## 13. Implementation roadmap (phased)
 
@@ -298,7 +298,7 @@ Interpretation: maintain 50 units as safety stock for that SKU.
 
 * Add predictive models, replenishment automation, vendor scorecards, and cost optimizations.
 
----
+
 
 ## 14. Example SQL patterns
 
@@ -337,14 +337,14 @@ where transaction_timestamp > (select max(transaction_timestamp) from {{ this }}
 {% endif %}
 ```
 
----
+
 
 ## 15. Governance, data catalog and metadata
 
 * Implement a data catalog (Alation, Collibra, or open source) integrated with Snowflake metadata.
 * Maintain a living data dictionary with ownership, SLA, sensitivity, and retention policy per object.
 
----
+
 
 ## 16. Risks and mitigations
 
@@ -354,7 +354,7 @@ where transaction_timestamp > (select max(transaction_timestamp) from {{ this }}
 * **Cost overruns** from unbounded compute usage. Mitigation: resource monitors and scheduled resizes.
 * **Model divergence** across teams. Mitigation: dbt and CI/CD with enforced tests.
 
----
+
 
 ## 17. Annexes
 
@@ -374,7 +374,7 @@ where transaction_timestamp > (select max(transaction_timestamp) from {{ this }}
 * Documented retention and purge policies.
 * Access review schedule and strong authentication.
 
----
+
 
 ## Reasoning steps taken
 
@@ -383,7 +383,7 @@ where transaction_timestamp > (select max(transaction_timestamp) from {{ this }}
 * Selected Snowflake Streams/Tasks and Snowpipe for CDC and near-real-time ingestion. ([Snowflake Documentation][4])
 * Cross-referenced vendor docs concerning PHI handling and Power BI connectivity limits to avoid design choices that conflict with platform constraints. ([Snowflake Documentation][1])
 
----
+
 
 ## Verification checklist — items requiring confirmation
 
@@ -393,7 +393,7 @@ where transaction_timestamp > (select max(transaction_timestamp) from {{ this }}
 * Vendor integrations and EDI formats supported by your suppliers.
 * Expected daily transaction volumes and concurrency so we can produce accurate cost/size estimates.
 
----
+
 
 ## What I delivered now and next steps
 
@@ -412,7 +412,7 @@ Please indicate which of the following you want next and I will generate it imme
 
 If you want the cost sizing and a vendor negotiation checklist, I will produce a sizing worksheet next but note that cost numbers require tenant-specific and contract-specific inputs which you may need to confirm.
 
----
+
 
 ## Sources cited (most load-bearing)
 
@@ -421,7 +421,7 @@ If you want the cost sizing and a vendor negotiation checklist, I will produce a
 * Power BI connectivity and DirectQuery limits. ([Microsoft Learn][3])
 * Hospital supply chain best practices and inventory management literature. ([PMC][7])
 
----
+
 
 If you want, I will now generate one of the concrete artifacts listed above (dbt skeletons, Snowflake DDL, Power BI wireframe). Tell me which artifact to produce first and I will generate it immediately.
 
