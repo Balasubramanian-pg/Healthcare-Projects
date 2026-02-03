@@ -263,4 +263,3 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY encounter_id ORDER BY recorded_at DESC) 
 * Project Slack channel: #ed-throughput-ops
 * Weekly cadence: 30 minute standup with Data Engineering and Clinical Lead
 * Monthly governance: 60 minute review with Sponsor and CQO
-
