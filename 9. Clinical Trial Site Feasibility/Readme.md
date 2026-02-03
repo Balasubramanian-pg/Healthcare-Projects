@@ -159,4 +159,3 @@ Advanced analytics such as machine learning-based site recommendation engines ca
 This Clinical Trial Site Feasibility platform provides a robust, scalable, and governed foundation for improving one of the most impactful decisions in clinical development. By combining Snowflake, dbt, and Streamlit in a cohesive architecture, the organization gains not just dashboards, but an enterprise capability that embeds data-driven reasoning into clinical planning.
 
 The design emphasizes realism, auditability, and long-term reuse, ensuring the platform evolves alongside the clinical portfolio rather than becoming another isolated analytics solution.
-
