@@ -379,4 +379,3 @@ ASSUMPTION: Source systems expose reliable identifiers across domains.
 ## 29. Conclusion
 
 This project establishes a durable analytics foundation for understanding and improving nurse staffing and burnout. By combining robust data engineering practices with Snowflake’s capabilities, healthcare organizations can move from reactive staffing decisions to proactive workforce stewardship.
-
