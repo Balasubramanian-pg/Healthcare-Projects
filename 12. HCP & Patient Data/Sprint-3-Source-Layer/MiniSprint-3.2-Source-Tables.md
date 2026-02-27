@@ -1,4 +1,4 @@
-# MiniSprint 3.2: Source Tables
+# Source Tables
 
 ## Overview
 
