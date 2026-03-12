@@ -1,351 +1,407 @@
-# Project Plan — Pharma Pharmacovigilance Data Fabric (Microsoft Fabric style)
+# Project Plan — Pharma Drug Distribution Analytics using IQVIA Xponent Data in Microsoft Fabric
 
-## 1. Executive summary
+## 1. Project Overview
 
-This project builds a pharma-focused data fabric to support pharmacovigilance and medication safety analytics. The pipeline follows the image you provided: ingest high-volume and low-volume sources, land into Bronze, perform initial processing, build Silver (curated) stores, run further transforms to Golden (trusted) assets, then power visualizations and ML serving. Primary outcomes:
+This project builds a Microsoft Fabric data platform to analyze **daily drug distribution using IQVIA Xponent data**. The system ingests high-volume prescription transactions and supporting reference datasets, transforms them through Bronze, Silver, and Golden layers, and produces analytics and ML insights for pharmaceutical commercial and market access teams.
 
-* Continuous adverse event detection and case prioritization
-* Self-service analytics for safety and regulatory teams
-* Production ML model to score reports and flag signals
-* Full lineage, access controls, and audit trail for compliance
+The objective is to monitor:
 
-Sources used to ground regulatory expectations: WHO and FDA pharmacovigilance definitions and guidance, plus HIPAA and GDPR overviews. ([World Health Organization][1])
+* Daily prescription volume trends
+* Prescriber behavior and adoption
+* Market share vs competitors
+* Geographic performance
+* Early prescription signals for launches
+* Demand forecasting
 
----
+IQVIA Xponent is widely used in the pharmaceutical industry to estimate prescription activity and physician prescribing patterns derived from retail pharmacy data sources.
 
-## 2. Use case, scope, and assumptions
+## 2. Business Objectives
 
-### 2.1 Use case
+### Primary goals
 
-* Pharmacovigilance: ingest adverse event reports, EHR extracts, claims, lab results, and marketing/sales data to detect safety signals, prioritize cases for review, and report to regulators.
+* Track **daily prescription distribution for branded drugs**
+* Monitor **market share vs competitor products**
+* Identify **high-value prescribers and territories**
+* Enable **sales performance analytics**
+* Support **forecasting models for drug demand**
 
-### 2.2 In scope
+### Key business questions
 
-* Design and implement end-to-end data fabric: ingestion, Bronze/Silver/Golden layers, cataloging, data quality, transformations, Power BI reports, and ML model training + serving.
-* Security controls, role-based access, and a compliance checklist for PHI/personal data handling.
-* MLOps pipeline for model retraining and inference endpoints.
+* Which prescribers drive the most prescriptions?
+* Which geographies show the fastest growth?
+* How is market share evolving daily or weekly?
+* Which territories require sales intervention?
 
-### 2.3 Out of scope (initial MVP)
+## 3. Data Sources
 
-* On-prem integration of legacy systems requiring device-level changes
-* Full regulatory submission automation (can be phased)
-* Global multi-region failover (optional phase 2)
+### High-Volume Data (Primary IQVIA datasets)
 
-### 2.4 ASSUMPTIONS (explicit)
+| Dataset                   | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
+| Xponent Prescription Data | Daily prescription transactions by drug, pharmacy, prescriber |
+| Xponent NRx               | New prescriptions                                             |
+| Xponent TRx               | Total prescriptions                                           |
+| Pharmacy Distribution     | Retail pharmacy dispense information                          |
+| Territory Mapping         | Sales territory assignments                                   |
 
-* ASSUMPTION: Microsoft Fabric (OneLake + Lakehouses + Dataflows + Notebooks + Power BI + model serving) will be the target platform. If another platform is chosen, some implementation details will change.
-* ASSUMPTION: Data owners will provide sample extracts and access credentials for each source during discovery.
-* ASSUMPTION: Project team has legal/compliance contacts to approve de-identification / data sharing rules.
+These datasets typically contain **millions of rows per day** depending on coverage.
 
----
+### Low-Volume Reference Data
 
-## 3. Stakeholders and roles
+| Dataset             | Description                                  |
+| ------------------- | -------------------------------------------- |
+| Drug Master         | Drug name, NDC, brand/generic classification |
+| HCP Master          | Prescriber information (NPI, specialty)      |
+| Territory Hierarchy | Region, district, territory mapping          |
+| Payer Reference     | Payer type classification                    |
+| ZIP-Geo Mapping     | Geography enrichment                         |
 
-* Project sponsor: Head of Safety / Pharmacovigilance
-* Product owner: PV analyst lead
-* Project manager: delivery lead
-* Data engineer(s): 2 FTE (ingest, transformations, pipelines)
-* Data architect: 0.5 FTE
-* Data scientist(s): 1–2 FTE (feature engineering, model)
-* BI developer: 1 FTE (Power BI)
-* DevOps/security: 0.5 FTE
-* QA/testers: 0.5 FTE
-* Regulatory/compliance SME: as needed
+## 4. End-to-End Fabric Architecture
 
----
+The architecture directly follows the pipeline structure in the diagram.
 
-## 4. Architecture and components (high level)
+### Step 1 — High-Volume Data Ingestion
 
-* Ingest layer
+Sources include:
 
-  * High-volume streaming/batch sources (EHR, claims, device telemetry)
-  * Low-volume sources (safety case forms, regulatory reference tables, drug master)
-* Bronze (raw landing) lakehouse
+* IQVIA Xponent daily extracts (CSV / Parquet / SFTP)
+* Pharmacy transactions
+* Territory assignments
 
-  * Immutable raw files (parquet/CSV), partitioned by ingestion date and source
-* Initial process
+Ingested using:
 
-  * Lightweight parsing, schema attachment, basic validation
-* Silver (curated) datasets
+* Fabric Data Pipelines
+* Scheduled ingestion jobs
+* Event-based ingestion (if streaming feeds exist)
 
-  * Standardized tables: patient_pseudonym, drug_master, adverse_event_raw_parsed, lab_results_norm
-* Further transform
+Stored in:
 
-  * Entity resolution, deduplication, enrichment (drug mapping, ATC codes), de-identification
-* Golden (trusted) assets
+**Bronze Lakehouse raw tables**
 
-  * Flattened safety case view, signal analytics tables, ML feature store
-* Consumers
+### Step 2 — Low-Volume Data Ingestion
 
-  * Power BI datasets and reports for safety dashboards
-  * ML serving endpoints for real-time scoring and triage queues
-* Governance
+Reference tables ingested weekly or monthly:
 
-  * Data catalog and lineage, access controls, monitoring and alerting
+* Drug master
+* HCP master
+* Geographic mapping
+* Payer classification
 
----
+These datasets support enrichment and joins.
 
-## 5. Deliverables (explicit)
+### Step 3 — Bronze Layer (Raw Data Storage)
 
-* Discovery and data inventory document
-* Data model: Bronze / Silver / Golden schemas
-* Ingestion pipelines and scripts (parameterized)
-* Transformation notebooks and SQLs
-* Data quality rules and automated tests
-* Metadata catalog entries and lineage diagrams
-* Power BI report pack (safety dashboard, trend analyzers, RCA views)
-* Trained ML model + serving endpoint and CI/CD for retraining
-* Runbooks, security controls checklist, and handover docs
+Bronze stores raw, unprocessed data.
 
----
+Example tables:
 
-## 6. Work breakdown and 10-week delivery plan (recommended MVP)
+| Table              | Description                   |
+| ------------------ | ----------------------------- |
+| bronze_xponent_rx  | Raw prescription transactions |
+| bronze_drug_master | Drug reference                |
+| bronze_hcp_master  | Prescriber details            |
+| bronze_territory   | Territory mapping             |
 
-> Reasoning summary: I divided the work into discovery, iterative delivery of each data layer, early analytics + ML prototyping, and finalization. Each sprint ends with a demo and acceptance criteria.
+Design principles:
 
-### Weeks 0–1 — Discovery & design
+* Immutable raw data
+* Partition by ingestion date
+* Minimal transformations
+* Maintain source lineage
 
-* Tasks:
+Example schema for prescription data:
 
-  * Kickoff, stakeholder interviews, identify sources and sample data
-  * Define success metrics and acceptance criteria
-  * Finalize platform, environments, and access
-* Deliverables: Data inventory, architecture diagram, project backlog
+| Column      | Description           |
+| ----------- | --------------------- |
+| rx_date     | Prescription date     |
+| ndc         | Drug NDC code         |
+| npi         | Prescriber identifier |
+| pharmacy_id | Pharmacy identifier   |
+| trx         | Total prescriptions   |
+| nrx         | New prescriptions     |
+| zip         | Pharmacy ZIP          |
+| source_file | Original file         |
 
-### Weeks 2–3 — Ingest and Bronze
+## 5. Initial Processing Layer
 
-* Tasks:
+Initial processing prepares raw data for analytical transformation.
 
-  * Implement connectors for each source (API pulls, SFTP, streaming)
-  * Landing raw files into Bronze lakehouse; partitioning strategy
-  * Implement basic schema registry and raw metadata capture
-* Deliverables: Working ingestion pipelines for all sources, Bronze QA
+Tasks include:
 
-### Weeks 4–5 — Initial processing and Silver
+* Schema standardization
+* Date normalization
+* Deduplication
+* Data type validation
+* Null checks
 
-* Tasks:
+Example transformation:
 
-  * Parsing, canonicalization of fields, initial data quality checks
-  * Build Silver tables: normalized drug master, patient pseudonymization, adverse_event_parsed
-* Deliverables: Silver datasets + data quality reports
+Convert prescription date formats and ensure numeric fields are valid.
 
-### Weeks 6–7 — Further transforms and Golden
-
-* Tasks:
-
-  * De-duplication, entity resolution, enrichment (ATC mapping), merging signals
-  * Create Golden views for reporting and ML feature store
-* Deliverables: Golden dataset, lineage and dataset documentation
-
-### Weeks 8 — Analytics, BI and UAT
-
-* Tasks:
-
-  * Build Power BI reports and datasets: dashboard, signal explorer, case queue
-  * User acceptance testing with PV team
-* Deliverables: Power BI report pack, UAT sign-offs
-
-### Weeks 9 — ML model and serving
-
-* Tasks:
-
-  * Prototype model to score case priority (training, validation)
-  * Deploy model to serving endpoint or batch scoring job
-  * Integrate scores into Golden dataset and BI
-* Deliverables: Model + inference endpoint + evaluation report
-
-### Week 10 — Harden, security, handover
-
-* Tasks:
-
-  * Implement RBAC, encryption, logging, retention policies
-  * Final security/compliance review and docs
-  * Handover, runbooks, training sessions
-* Deliverables: Production handover pack, SLA definitions
-
----
-
-## 7. Technical tasks and examples
-
-### 7.1 Ingestion patterns
-
-* High-volume: streaming ingestion or micro-batch (use event hubs, Kafka, or scheduled Spark jobs)
-* Low-volume: scheduled API pulls or SFTP fetches
-
-### 7.2 Bronze conventions (example)
-
-* Path pattern: `/oneLake/bronze/{source}/{year}/{month}/{day}/sourcefile.parquet`
-* Metadata per file: source, received_ts, file_checksum, schema_version
-
-### 7.3 Example Bronze → Silver transform (SQL pseudocode)
+Example SQL:
 
 ```sql
--- parse adverse event raw JSON into canonical table
-INSERT INTO silver.adverse_events
 SELECT
-  file_metadata.source_filename,
-  parsed.event_id,
-  parsed.report_date::date as report_date,
-  parsed.patient_id_hashed as patient_id,
-  parsed.drug_code,
-  parsed.reaction_code,
-  parsed.severity,
-  parsed.report_text
-FROM bronze.adverse_events_raw r
-CROSS APPLY OPENJSON(r.payload) WITH (...)
-WHERE r.ingest_date = CURRENT_DATE();
+  CAST(rx_date AS DATE) AS rx_date,
+  ndc,
+  npi,
+  pharmacy_id,
+  CAST(trx AS INTEGER) AS trx,
+  CAST(nrx AS INTEGER) AS nrx,
+  zip
+FROM bronze_xponent_rx
+WHERE trx IS NOT NULL
 ```
 
-### 7.4 De-identification guidance (high level)
+Output stored in staging tables.
 
-* Pseudonymize patient identifiers using HMAC with a keyed secret (do not store mapping in same dataset)
-* Remove or mask direct identifiers in Golden outputs unless business-justified and authorized
-* Retain linkage keys in secure key vault and separate environment
+## 6. Silver Layer (Curated Data)
 
----
+Silver layer contains **clean, standardized, enriched datasets**.
 
-## 8. Data model (key tables)
+Key tables:
 
-* `bronze.adverse_events_raw` — raw payloads
-* `silver.adverse_events_parsed` — canonical fields, timestamps, source ids
-* `silver.drug_master` — drug codes, ATC, ingredient mapping
-* `silver.patient_pseudonym` — hashed patient id and minimal demographics
-* `golden.safety_case` — flattened, enrichment, score, review status
-* `golden.feature_store` — model-ready features with versioning
+| Table                 | Description                     |
+| --------------------- | ------------------------------- |
+| silver_prescriptions  | Clean prescription transactions |
+| silver_hcp_dimension  | Prescriber attributes           |
+| silver_drug_dimension | Drug details                    |
+| silver_geo_dimension  | Geographic hierarchy            |
 
----
+Transformations performed:
 
-## 9. Data quality and test plan
+* Join HCP and drug master
+* Resolve duplicates
+* Enrich ZIP with geographic attributes
+* Map NDC to brand names
 
-* Define checks for:
+Example transformation:
 
-  * Completeness: percent nulls by critical columns
-  * Schema drift: unexpected new fields
-  * Duplicate detection threshold
-  * Value validation: date ranges, code lists
-* Implement automated tests as part of CI/CD and fail pipelines if critical thresholds exceeded
+```sql
+SELECT
+  p.rx_date,
+  d.brand_name,
+  d.generic_name,
+  p.trx,
+  p.nrx,
+  h.specialty,
+  g.state,
+  g.region
+FROM silver_prescriptions p
+LEFT JOIN silver_drug_dimension d
+ON p.ndc = d.ndc
+LEFT JOIN silver_hcp_dimension h
+ON p.npi = h.npi
+LEFT JOIN silver_geo_dimension g
+ON p.zip = g.zip
+```
 
----
+## 7. Further Transformations
 
-## 10. Security, compliance, and audit (short)
+Advanced analytical transformations:
 
-* Controls:
+### Market Share Calculation
 
-  * RBAC for lakehouses and Power BI
-  * Encryption at rest and in transit
-  * Audit logging and dataset lineage
-* Compliance:
+Compute brand share relative to competitors.
 
-  * Follow pharmacovigilance practice for signal reporting and retention
-  * Ensure PHI handling complies with applicable laws (example references for PHI and data protection included). ([HHS.gov][2])
+Example:
 
----
+```sql
+SELECT
+  rx_date,
+  brand_name,
+  SUM(trx) AS total_trx,
+  SUM(trx) / SUM(SUM(trx)) OVER (PARTITION BY rx_date) AS market_share
+FROM silver_prescriptions
+GROUP BY rx_date, brand_name
+```
 
-## 11. ML design and serving
+### Prescriber Segmentation
 
-* Problem: classify/report priority and identify likely serious adverse events
-* Pipeline:
+Identify:
 
-  * Feature assembly (temporal aggregations, text features from report_text via NLP)
-  * Train/test split, model validation, explainability (SHAP)
-  * Deploy model: batch scoring into Golden store and optional REST endpoint for real-time triage
-* Monitoring: concept drift detection, model performance dashboard, automated retraining schedule
+* High-value prescribers
+* New adopters
+* Declining prescribers
 
----
+### Sales Territory Aggregation
 
-## 12. Monitoring, alerting, and ops
+Aggregate metrics:
 
-* Track pipeline latency, failure rates, data quality metrics
-* Set alerts on ingestion failures, schema drift, DAG failures
-* Build SLOs: 99% of daily ingest within 2 hours of source availability
+* Territory TRx
+* Territory growth rate
+* Rep performance indicators
 
----
+## 8. Golden Layer (Business Ready Data)
 
-## 13. Risks and mitigations
+Golden datasets are optimized for reporting and ML.
 
-* Risk: Sensitive data access delays
+Key tables:
 
-  * Mitigation: run minimal PII-free proof-of-concept using synthetic data; parallel legal approval
-* Risk: Schema drift from upstream sources
+| Table                        | Purpose                   |
+| ---------------------------- | ------------------------- |
+| golden_market_share          | Market share trends       |
+| golden_hcp_performance       | Prescriber ranking        |
+| golden_territory_performance | Sales territory analytics |
+| golden_rx_trends             | Daily prescription trends |
 
-  * Mitigation: schema registry and automated alerts
-* Risk: Regulatory requirements differ by region
+Example schema for territory performance:
 
-  * Mitigation: include compliance SME and produce region-specific controls
+| Column       | Description         |
+| ------------ | ------------------- |
+| territory_id | Sales territory     |
+| rx_date      | Date                |
+| total_trx    | Total prescriptions |
+| growth_rate  | Daily growth        |
+| brand_share  | Market share        |
 
----
+Golden tables are used directly in Power BI and ML pipelines.
 
-## 14. Acceptance criteria (examples)
+## 9. Data Visualization (Power BI)
 
-* Bronze: All configured sources land raw data with metadata for 7 consecutive days
-* Silver: Canonical adverse_event_parsed contains 95% of expected critical fields populated
-* Golden: Safety case view contains enrichment and integrated ML score for at least 90% of records
-* BI: PV team can filter, export, and run ad hoc queries from reports; UAT sign-off
+Dashboards created from Golden datasets.
 
----
+### Executive Dashboard
 
-## 15. Repo and naming conventions (suggested)
+Metrics:
 
-* Repo: `pharma-pv-datafabric`
-* Folders:
+* Total prescriptions
+* Market share
+* Growth trends
+* Territory performance
 
-  * `/infrastructure` — IaC scripts (Terraform/ARM/Bicep)
-  * `/pipelines` — pipeline definitions
-  * `/notebooks` — exploration and transforms
-  * `/models` — model training code and artifacts
-  * `/docs` — runbooks and compliance docs
-* Branching: `main`, `develop`, feature branches
+### Sales Dashboard
 
----
+Insights:
 
-## 16. Cost and resource estimate (ballpark for planning)
+* Top prescribers
+* Prescriber growth
+* Territory performance
 
-* Team for 10 weeks: ~5.5 FTE average (data engineers 2, data scientist 1.5, BI 1, PM/architect 1)
-* Cloud compute: depends on ingest volume. Provide specific cost estimate after discovery (REQUIRES verification).
+### Market Intelligence Dashboard
 
----
+Insights:
 
-## 17. Handover, training, and documentation
+* Brand vs competitor share
+* Launch performance
+* Regional demand patterns
 
-* Deliver runbooks: operational playbooks for ingestion failures, model rollback steps
-* Provide a 2-day training for PV analysts on dashboards and dataset usage
-* Transfer ownership and schedule post-launch support for 4 weeks
+## 10. ML Serving Layer
 
----
+Machine learning models analyze prescription trends.
 
-## 18. Short, concise reasoning steps taken
+Possible models:
 
-* Identified the pharma use case (pharmacovigilance) and mapped it to the pipeline you provided
-* Broke work into discovery, iterative implementation of Bronze→Silver→Golden, and consumer enablement (BI + ML)
-* Emphasized compliance, data quality, and operationalization as nonfunctional requirements
+### Demand Forecasting
 
----
+Predict future prescriptions using time-series models.
 
-## 19. Items that require verification or are uncertain
+Inputs:
 
-* Source availability, formats, and sample size (requires data inventory)
-* Whether Microsoft Fabric is the mandated platform or if alternatives (Azure Data Factory + Synapse) are acceptable
-* Exact regulatory requirements per country/region for PHI and reporting cadence
-* Expected data volume and retention policy (cost impact)
-* SLA expectations for latency and throughput
+* Historical TRx
+* Market share
+* Seasonality
+* Territory adoption
 
----
+Outputs:
 
-## 20. Next steps (immediate)
+* 30-day demand forecast
+* Territory demand forecast
 
-* Confirm platform choice and provide access to sample data extracts
-* Run a 1-week spike: ingest one high-volume and one low-volume source into Bronze to validate schema and performance
-* Produce a detailed backlog and sprint plan (Jira / Azure DevOps) for the 10-week delivery
+### Prescriber Propensity Model
 
----
+Predict likelihood of an HCP prescribing a drug.
 
-If you want, I can now:
+Features:
 
-* Produce a ready-to-run sprint backlog with task-level breakdown and Jira-style tickets for the full 10-week plan
-* Generate the example SQL/Notebook files and a sample repo layout (in markdown) to drop into GitHub
-* Create the Power BI report wireframes and a sample Power BI dataset schema
+* Past prescription history
+* Specialty
+* Territory adoption
+* Peer influence
 
-Tell me which of those you want me to create first and I will generate it immediately.
+Output:
 
-[1]: https://www.who.int/teams/regulation-prequalification/regulation-and-safety/pharmacovigilance?utm_source=chatgpt.com "Pharmacovigilance WHO - Regulation and Prequalification"
-[2]: https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html?utm_source=chatgpt.com "Summary of the HIPAA Privacy Rule"
+Probability score per prescriber.
+
+## 11. Data Governance and Compliance
+
+Key governance elements:
+
+* Data lineage tracking
+* Role-based access control
+* Audit logs
+* Data catalog
+
+Sensitive identifiers such as NPI must be handled with appropriate access restrictions.
+
+## 12. Project Timeline
+
+Estimated delivery timeline: **10 weeks**
+
+| Phase                    | Duration |
+| ------------------------ | -------- |
+| Discovery and design     | 1 week   |
+| Data ingestion pipelines | 2 weeks  |
+| Bronze implementation    | 1 week   |
+| Silver transformations   | 2 weeks  |
+| Golden datasets          | 2 weeks  |
+| Power BI dashboards      | 1 week   |
+| ML models                | 1 week   |
+
+## 13. Risks and Mitigation
+
+### Data latency
+
+Daily feeds may arrive late.
+
+Mitigation:
+
+Implement ingestion monitoring.
+
+### Schema changes
+
+IQVIA may change data schema.
+
+Mitigation:
+
+Schema validation checks.
+
+### Data quality issues
+
+Missing prescriber or drug mappings.
+
+Mitigation:
+
+Reference data validation.
+
+## 14. Success Metrics
+
+Project success measured by:
+
+* Daily data refresh reliability > 99%
+* Query response < 5 seconds in Power BI
+* Accurate market share calculation
+* Adoption by commercial analytics team
+
+## 15. Items That Require Verification
+
+The following require confirmation with IQVIA or internal teams:
+
+* Exact schema of Xponent daily extracts
+* Delivery format (CSV, SFTP, API)
+* Availability of NRx vs TRx fields
+* Territory mapping dataset format
+* Refresh frequency (daily vs weekly)
+
+These items cannot be verified without the specific client data contract.
+
+## 16. Reasoning Summary
+
+The project plan maps the Fabric pipeline architecture to a real pharmaceutical analytics workflow based on IQVIA Xponent prescription data. The pipeline transforms raw prescription data into curated analytical datasets supporting market share analysis, sales insights, and predictive analytics.
+
+If needed, the next step can include:
+
+* A **complete table schema for every Bronze, Silver, and Golden dataset**
+* **Synthetic sample Xponent dataset generator (Python)**
+* **Exact Fabric pipeline setup instructions matching your diagram**
+* **Power BI dashboard wireframes**.
